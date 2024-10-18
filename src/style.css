@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #000000;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -79,6 +79,12 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+#myCanvas {
+  border: 2px solid rgb(255, 255, 255);
+  border-radius: 10px; /* Optional rounded corners */
+  box-shadow: 5px 5px 15px rgb(255, 255, 255); /* Optional drop shadow */
 }
 
 @media (prefers-color-scheme: light) {
