@@ -62,7 +62,7 @@ button {
   padding: 5px 10px;
   font-size: 16px;
   border: 2px solid rgb(255, 255, 255);
-  box-shadow: 2px 2px 2px rgb(255, 255, 255);
+  
   cursor: pointer;
   transition: background-color 0.3s ease; 
   
