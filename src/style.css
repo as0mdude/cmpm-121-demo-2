@@ -46,17 +46,6 @@ button {
   font-family: inherit;
   background-color: #000000;
   cursor: pointer;
-  
-}
-
-
-#myCanvas {
-  border: 2px solid rgb(255, 255, 255);
-  border-radius: 10px; /* Optional rounded corners */
-  box-shadow: 5px 5px 15px rgb(255, 255, 255); /* Optional drop shadow */
-}
-
-#clearButton {
   display: block;
   margin-top: 15px;
   padding: 5px 10px;
@@ -67,6 +56,15 @@ button {
   transition: background-color 0.3s ease; 
   
 }
+
+
+#myCanvas {
+  border: 2px solid rgb(255, 255, 255);
+  border-radius: 10px; /* Optional rounded corners */
+  box-shadow: 5px 5px 15px rgb(255, 255, 255); /* Optional drop shadow */
+}
+
+
 
 #clearButton:hover {
   background-color: #2c2828;

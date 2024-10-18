@@ -2,46 +2,35 @@ import "./style.css";
 
 const APP_NAME = "sketch.";
 const app = document.querySelector<HTMLDivElement>("#app")!;
-
-// Set the document title
 document.title = APP_NAME;
-
-// Add the app name to the app div
 app.innerHTML = `<h1>${APP_NAME}</h1>`;
 
 // Create a canvas element
 const canvas = document.createElement('canvas');
 canvas.width = 256;
 canvas.height = 256;
-canvas.id = 'myCanvas';  // Add an ID to reference in CSS
-
-// Append the canvas to the app div
+canvas.id = 'myCanvas';
 app.appendChild(canvas);
 
 const ctx = canvas.getContext('2d');
+let isDrawing = false;
 
+// Creating the arrays for drawing
 let lines: Array<Array<{ x: number, y: number }>> = [];
-let currentLine: Array<{ x: number, y: number }> = [];
+const undoStack: Array<Array<{ x: number, y: number }>> = [];
 
-if(ctx){
+if (ctx) {
     ctx.strokeStyle = 'white';
 }
 
-let isDrawing = false;
-
-function addPoint(x: number, y: number){
-    currentLine.push({x, y});
+function addPoint(x: number, y: number) {
+    lines[lines.length - 1].push({x, y});
     drawingChangedEvent();
-
 }
 
-function redrawCanvas(){
+function redrawCanvas() {
     if (!ctx) return;
-
-    // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Redraw each line
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
     lines.forEach(line => {
@@ -55,27 +44,23 @@ function redrawCanvas(){
         ctx.stroke();
         ctx.closePath();
     });
-    
 }
+
 function drawingChangedEvent() {
     const event = new Event('drawing-changed');
     canvas.dispatchEvent(event);
 }
 
-
 canvas.addEventListener('drawing-changed', () => {
     redrawCanvas();
 });
 
-
 // Event handler for starting drawing
 canvas.addEventListener('mousedown', (e) => {
     isDrawing = true;
-    currentLine = [];
+    lines.push([]);  // Start a new line
     addPoint(e.offsetX, e.offsetY);
-    lines.push(currentLine);  // Save the current line
-    drawingChangedEvent(); 
-    
+    undoStack.splice(0, undoStack.length);
 });
 
 // Event handler for drawing
@@ -86,11 +71,7 @@ canvas.addEventListener('mousemove', (e) => {
 
 // Event handler for stopping drawing
 canvas.addEventListener('mouseup', () => {
-    if (isDrawing) {
-        isDrawing = false;
-        lines.push(currentLine);  // Save the current line
-        drawingChangedEvent();  // Trigger the drawing changed event
-    }
+    isDrawing = false;
 });
 
 // Add a "clear" button
@@ -101,6 +82,38 @@ app.appendChild(clearButton);
 
 // Event handler for clearing the canvas
 clearButton.addEventListener('click', () => {
-    lines = [];  // Reset the lines array
-    drawingChangedEvent();  // Trigger redraw
+    lines = [];
+    drawingChangedEvent();
+});
+
+const undoButton = document.createElement('button');
+undoButton.textContent = "Undo";
+undoButton.id = 'undoButton';
+app.appendChild(undoButton);
+
+
+// Event handler for undo-ing the last line
+undoButton.addEventListener('click', () => {
+    if (lines.length > 0) {
+        const line = lines.pop()
+        if(line){
+            undoStack.push(line)
+        }
+        drawingChangedEvent();
+    }
+});
+
+const redoButton = document.createElement('button');
+redoButton.textContent = "Redo";
+redoButton.id = 'redoButton';
+app.appendChild(redoButton);
+
+redoButton.addEventListener('click', () => {
+    if (lines.length > 0) {
+        const line = undoStack.pop()
+        if(line){
+            lines.push(line)
+        }
+        drawingChangedEvent();
+    }
 });
