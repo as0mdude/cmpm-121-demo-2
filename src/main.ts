@@ -60,7 +60,9 @@ canvas.addEventListener('mousedown', (e) => {
     isDrawing = true;
     lines.push([]);  // Start a new line
     addPoint(e.offsetX, e.offsetY);
-    undoStack.splice(0, undoStack.length);
+    if (lines.length > 0) {
+        undoStack.splice(0, undoStack.length);
+    }
 });
 
 // Event handler for drawing
@@ -76,7 +78,7 @@ canvas.addEventListener('mouseup', () => {
 
 // Add a "clear" button
 const clearButton = document.createElement('button');
-clearButton.textContent = "Clear Canvas";
+clearButton.textContent = "clear canvas";
 clearButton.id = 'clearButton';
 app.appendChild(clearButton);
 
@@ -87,7 +89,7 @@ clearButton.addEventListener('click', () => {
 });
 
 const undoButton = document.createElement('button');
-undoButton.textContent = "Undo";
+undoButton.textContent = "undo";
 undoButton.id = 'undoButton';
 app.appendChild(undoButton);
 
@@ -104,12 +106,12 @@ undoButton.addEventListener('click', () => {
 });
 
 const redoButton = document.createElement('button');
-redoButton.textContent = "Redo";
+redoButton.textContent = "redo";
 redoButton.id = 'redoButton';
 app.appendChild(redoButton);
 
 redoButton.addEventListener('click', () => {
-    if (lines.length > 0) {
+    if (undoStack.length > 0) {
         const line = undoStack.pop()
         if(line){
             lines.push(line)
