@@ -45,9 +45,34 @@ class Line {
     }
 }
 
+// Class representing the tool preview (marker width)
+class ToolPreview {
+    private x: number;
+    private y: number;
+
+    constructor(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+
+    updatePosition(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, currentThickness, 0, Math.PI * 2);
+        ctx.fillStyle = 'white';
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
 // Arrays for storing Line objects
 let lines: Array<Line> = [];
 const undoStack: Array<Line> = [];
+let toolPreview: ToolPreview | null = null; 
 
 if (ctx) {
     ctx.strokeStyle = 'white';
@@ -57,6 +82,11 @@ function redrawCanvas() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     lines.forEach(line => line.display(ctx));
+
+    // Draw the tool preview if it's active and not drawing
+    if (toolPreview && !isDrawing) {
+        toolPreview.draw(ctx);
+    }
 }
 
 function drawingChangedEvent() {
@@ -73,6 +103,7 @@ canvas.addEventListener('mousedown', (e) => {
     isDrawing = true;
     const newLine = new Line(e.offsetX, e.offsetY, currentThickness);
     lines.push(newLine);  // Add new line to the lines array
+    toolPreview = null;  
     if (lines.length > 0) {
         undoStack.splice(0, undoStack.length);  // Clear undo stack if a new line is added
     }
@@ -81,9 +112,18 @@ canvas.addEventListener('mousedown', (e) => {
 
 // Event handler for drawing
 canvas.addEventListener('mousemove', (e) => {
-    if (!isDrawing) return;
+    if (isDrawing){
     lines[lines.length - 1].drag(e.offsetX, e.offsetY);
     drawingChangedEvent();
+    }else {
+        // Update tool preview position
+        if (toolPreview) {
+            toolPreview.updatePosition(e.offsetX, e.offsetY);
+        } else {
+            toolPreview = new ToolPreview(e.offsetX, e.offsetY, 5);  // Create tool preview with a radius of 5
+        }
+        redrawCanvas();  // Update the canvas to show tool preview
+    }
 });
 
 // Event handler for stopping drawing
