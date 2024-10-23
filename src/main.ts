@@ -15,11 +15,16 @@ app.appendChild(canvas);
 const ctx = canvas.getContext('2d');
 let isDrawing = false;
 
+// Default line thickness (set to thin by default)
+let currentThickness = 2;
+
 class Line {
     private points: Array<{ x: number, y: number }> = [];
+    private thickness: number;
 
-    constructor(startX: number, startY: number) {
+    constructor(startX: number, startY: number, thickness: number) {
         this.points.push({ x: startX, y: startY });
+        this.thickness = thickness;
     }
 
     drag(x: number, y: number) {
@@ -30,6 +35,7 @@ class Line {
         if (this.points.length > 0) {
             ctx.beginPath();
             ctx.moveTo(this.points[0].x, this.points[0].y);
+            ctx.lineWidth = this.thickness;  // Set the thickness based on the line's thickness
             for (let i = 1; i < this.points.length; i++) {
                 ctx.lineTo(this.points[i].x, this.points[i].y);
             }
@@ -45,7 +51,6 @@ const undoStack: Array<Line> = [];
 
 if (ctx) {
     ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
 }
 
 function redrawCanvas() {
@@ -66,7 +71,7 @@ canvas.addEventListener('drawing-changed', () => {
 // Event handler for starting drawing
 canvas.addEventListener('mousedown', (e) => {
     isDrawing = true;
-    const newLine = new Line(e.offsetX, e.offsetY);
+    const newLine = new Line(e.offsetX, e.offsetY, currentThickness);
     lines.push(newLine);  // Add new line to the lines array
     if (lines.length > 0) {
         undoStack.splice(0, undoStack.length);  // Clear undo stack if a new line is added
@@ -128,4 +133,31 @@ redoButton.addEventListener('click', () => {
         }
         drawingChangedEvent();
     }
+});
+
+// Add "thin" and "thick" buttons for marker tool selection
+const thinButton = document.createElement('button');
+thinButton.textContent = "thin";
+thinButton.id = 'thinButton';
+thinButton.classList.add('tool-button', 'selectedTool');  // Default selected
+app.appendChild(thinButton);
+
+const thickButton = document.createElement('button');
+thickButton.textContent = "thick";
+thickButton.id = 'thickButton';
+thickButton.classList.add('tool-button');
+app.appendChild(thickButton);
+
+// Event handler for switching to thin marker
+thinButton.addEventListener('click', () => {
+    currentThickness = 2;  // Set thin marker thickness
+    thickButton.classList.remove('selectedTool');
+    thinButton.classList.add('selectedTool');  // Add selected styling
+});
+
+// Event handler for switching to thick marker
+thickButton.addEventListener('click', () => {
+    currentThickness = 5;  // Set thick marker thickness
+    thinButton.classList.remove('selectedTool');
+    thickButton.classList.add('selectedTool');  // Add selected styling
 });
