@@ -66,6 +66,6 @@ button {
 
 
 
-#clearButton:hover {
+button:hover {
   background-color: #2c2828;
 }

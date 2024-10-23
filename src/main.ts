@@ -1,6 +1,6 @@
 import "./style.css";
 
-const APP_NAME = "sketch.";
+const APP_NAME = "sketchbox.";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APP_NAME;
 app.innerHTML = `<h1>${APP_NAME}</h1>`;
@@ -15,35 +15,43 @@ app.appendChild(canvas);
 const ctx = canvas.getContext('2d');
 let isDrawing = false;
 
-// Creating the arrays for drawing
-let lines: Array<Array<{ x: number, y: number }>> = [];
-const undoStack: Array<Array<{ x: number, y: number }>> = [];
+class Line {
+    private points: Array<{ x: number, y: number }> = [];
+
+    constructor(startX: number, startY: number) {
+        this.points.push({ x: startX, y: startY });
+    }
+
+    drag(x: number, y: number) {
+        this.points.push({ x, y });
+    }
+
+    display(ctx: CanvasRenderingContext2D) {
+        if (this.points.length > 0) {
+            ctx.beginPath();
+            ctx.moveTo(this.points[0].x, this.points[0].y);
+            for (let i = 1; i < this.points.length; i++) {
+                ctx.lineTo(this.points[i].x, this.points[i].y);
+            }
+            ctx.stroke();
+            ctx.closePath();
+        }
+    }
+}
+
+// Arrays for storing Line objects
+let lines: Array<Line> = [];
+const undoStack: Array<Line> = [];
 
 if (ctx) {
     ctx.strokeStyle = 'white';
-}
-
-function addPoint(x: number, y: number) {
-    lines[lines.length - 1].push({x, y});
-    drawingChangedEvent();
+    ctx.lineWidth = 2;
 }
 
 function redrawCanvas() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-    lines.forEach(line => {
-        ctx.beginPath();
-        if (line.length > 0) {
-            ctx.moveTo(line[0].x, line[0].y);
-            for (let i = 1; i < line.length; i++) {
-                ctx.lineTo(line[i].x, line[i].y);
-            }
-        }
-        ctx.stroke();
-        ctx.closePath();
-    });
+    lines.forEach(line => line.display(ctx));
 }
 
 function drawingChangedEvent() {
@@ -58,17 +66,19 @@ canvas.addEventListener('drawing-changed', () => {
 // Event handler for starting drawing
 canvas.addEventListener('mousedown', (e) => {
     isDrawing = true;
-    lines.push([]);  // Start a new line
-    addPoint(e.offsetX, e.offsetY);
+    const newLine = new Line(e.offsetX, e.offsetY);
+    lines.push(newLine);  // Add new line to the lines array
     if (lines.length > 0) {
-        undoStack.splice(0, undoStack.length);
+        undoStack.splice(0, undoStack.length);  // Clear undo stack if a new line is added
     }
+    drawingChangedEvent();
 });
 
 // Event handler for drawing
 canvas.addEventListener('mousemove', (e) => {
     if (!isDrawing) return;
-    addPoint(e.offsetX, e.offsetY);
+    lines[lines.length - 1].drag(e.offsetX, e.offsetY);
+    drawingChangedEvent();
 });
 
 // Event handler for stopping drawing
@@ -93,13 +103,12 @@ undoButton.textContent = "undo";
 undoButton.id = 'undoButton';
 app.appendChild(undoButton);
 
-
 // Event handler for undo-ing the last line
 undoButton.addEventListener('click', () => {
     if (lines.length > 0) {
-        const line = lines.pop()
-        if(line){
-            undoStack.push(line)
+        const line = lines.pop();
+        if (line) {
+            undoStack.push(line);
         }
         drawingChangedEvent();
     }
@@ -110,11 +119,12 @@ redoButton.textContent = "redo";
 redoButton.id = 'redoButton';
 app.appendChild(redoButton);
 
+// Event handler for redo-ing the last undone line
 redoButton.addEventListener('click', () => {
     if (undoStack.length > 0) {
-        const line = undoStack.pop()
-        if(line){
-            lines.push(line)
+        const line = undoStack.pop();
+        if (line) {
+            lines.push(line);
         }
         drawingChangedEvent();
     }
