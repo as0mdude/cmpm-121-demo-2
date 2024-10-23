@@ -5,7 +5,6 @@ const app = document.querySelector<HTMLDivElement>("#app")!;
 document.title = APP_NAME;
 app.innerHTML = `<h1>${APP_NAME}</h1>`;
 
-// Create a canvas element
 const canvas = document.createElement('canvas');
 canvas.width = 256;
 canvas.height = 256;
@@ -14,130 +13,96 @@ app.appendChild(canvas);
 
 const ctx = canvas.getContext('2d');
 let isDrawing = false;
-
-// Default line thickness (set to thin by default)
 let currentThickness = 2;
 
-class Line {
-    private points: Array<{ x: number, y: number }> = [];
-    private thickness: number;
+let lines = [];
+const undoStack = [];
+let toolPreview = { x: 0, y: 0, isVisible: false };
 
-    constructor(startX: number, startY: number, thickness: number) {
-        this.points.push({ x: startX, y: startY });
-        this.thickness = thickness;
-    }
+if (ctx) {
+    ctx.strokeStyle = 'white';
+}
 
-    drag(x: number, y: number) {
-        this.points.push({ x, y });
-    }
-
-    display(ctx: CanvasRenderingContext2D) {
-        if (this.points.length > 0) {
+function createLine(startX, startY, thickness) {
+    return {
+        points: [{ x: startX, y: startY }],
+        thickness: thickness,
+        drag(x, y) {
+            this.points.push({ x, y });
+        },
+        display(ctx) {
+            if (!ctx || this.points.length === 0) return;
             ctx.beginPath();
             ctx.moveTo(this.points[0].x, this.points[0].y);
-            ctx.lineWidth = this.thickness;  // Set the thickness based on the line's thickness
-            for (let i = 1; i < this.points.length; i++) {
-                ctx.lineTo(this.points[i].x, this.points[i].y);
-            }
+            ctx.lineWidth = this.thickness;
+            this.points.slice(1).forEach(point => {
+                ctx.lineTo(point.x, point.y);
+            });
             ctx.stroke();
             ctx.closePath();
         }
-    }
+    };
 }
 
-// Class representing the tool preview (marker width)
-class ToolPreview {
-    private x: number;
-    private y: number;
+function updateToolPreview(x, y) {
+    toolPreview.x = x;
+    toolPreview.y = y;
+}
 
-    constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-    }
-
-    updatePosition(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-    }
-
-    draw(ctx: CanvasRenderingContext2D) {
+function drawToolPreview(ctx) {
+    if (toolPreview.isVisible) {
         ctx.beginPath();
-        ctx.arc(this.x, this.y, currentThickness, 0, Math.PI * 2);
+        ctx.arc(toolPreview.x, toolPreview.y, currentThickness, 0, Math.PI * 2);
         ctx.fillStyle = 'white';
         ctx.fill();
         ctx.closePath();
     }
 }
 
-// Arrays for storing Line objects
-let lines: Array<Line> = [];
-const undoStack: Array<Line> = [];
-let toolPreview: ToolPreview | null = null; 
-
-if (ctx) {
-    ctx.strokeStyle = 'white';
-}
-
 function redrawCanvas() {
     if (!ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     lines.forEach(line => line.display(ctx));
-
-    // Draw the tool preview if it's active and not drawing
-    if (toolPreview && !isDrawing) {
-        toolPreview.draw(ctx);
-    }
+    drawToolPreview(ctx);
 }
 
 function drawingChangedEvent() {
-    const event = new Event('drawing-changed');
-    canvas.dispatchEvent(event);
+    canvas.dispatchEvent(new Event('drawing-changed'));
 }
 
-canvas.addEventListener('drawing-changed', () => {
-    redrawCanvas();
-});
+canvas.addEventListener('drawing-changed', redrawCanvas);
 
-// Event handler for starting drawing
 canvas.addEventListener('mousedown', (e) => {
     isDrawing = true;
-    const newLine = new Line(e.offsetX, e.offsetY, currentThickness);
-    lines.push(newLine);  // Add new line to the lines array
-    toolPreview = null;  
+    const newLine = createLine(e.offsetX, e.offsetY, currentThickness);
+    lines.push(newLine);
+    toolPreview.isVisible = false;
     if (lines.length > 0) {
-        undoStack.splice(0, undoStack.length);  // Clear undo stack if a new line is added
+        undoStack.length = 0;
     }
     drawingChangedEvent();
 });
 
-// Event handler for drawing
 canvas.addEventListener('mousemove', (e) => {
-    if (isDrawing){
-    lines[lines.length - 1].drag(e.offsetX, e.offsetY);
-    drawingChangedEvent();
-    }else {
-        // Update tool preview position
-        if (toolPreview) {
-            toolPreview.updatePosition(e.offsetX, e.offsetY);
-        } else {
-            toolPreview = new ToolPreview(e.offsetX, e.offsetY, 5);  // Create tool preview with a radius of 5
-        }
-        redrawCanvas();  // Update the canvas to show tool preview
+    if (isDrawing) {
+        lines[lines.length - 1].drag(e.offsetX, e.offsetY);
+        drawingChangedEvent();
+    } else {
+        updateToolPreview(e.offsetX, e.offsetY);
+        toolPreview.isVisible = true;
+        redrawCanvas();
     }
 });
 
-// Event handler for stopping drawing
 canvas.addEventListener('mouseup', () => {
     isDrawing = false;
 });
 
-// Add a "clear" button
 const clearButton = document.createElement('button');
 clearButton.textContent = "clear canvas";
 clearButton.id = 'clearButton';
 app.appendChild(clearButton);
 
-// Event handler for clearing the canvas
 clearButton.addEventListener('click', () => {
     lines = [];
     drawingChangedEvent();
@@ -148,13 +113,9 @@ undoButton.textContent = "undo";
 undoButton.id = 'undoButton';
 app.appendChild(undoButton);
 
-// Event handler for undo-ing the last line
 undoButton.addEventListener('click', () => {
     if (lines.length > 0) {
-        const line = lines.pop();
-        if (line) {
-            undoStack.push(line);
-        }
+        undoStack.push(lines.pop());
         drawingChangedEvent();
     }
 });
@@ -164,22 +125,17 @@ redoButton.textContent = "redo";
 redoButton.id = 'redoButton';
 app.appendChild(redoButton);
 
-// Event handler for redo-ing the last undone line
 redoButton.addEventListener('click', () => {
     if (undoStack.length > 0) {
-        const line = undoStack.pop();
-        if (line) {
-            lines.push(line);
-        }
+        lines.push(undoStack.pop());
         drawingChangedEvent();
     }
 });
 
-// Add "thin" and "thick" buttons for marker tool selection
 const thinButton = document.createElement('button');
 thinButton.textContent = "thin";
 thinButton.id = 'thinButton';
-thinButton.classList.add('tool-button', 'selectedTool');  // Default selected
+thinButton.classList.add('tool-button', 'selectedTool');
 app.appendChild(thinButton);
 
 const thickButton = document.createElement('button');
@@ -188,16 +144,14 @@ thickButton.id = 'thickButton';
 thickButton.classList.add('tool-button');
 app.appendChild(thickButton);
 
-// Event handler for switching to thin marker
 thinButton.addEventListener('click', () => {
-    currentThickness = 2;  // Set thin marker thickness
+    currentThickness = 2;
     thickButton.classList.remove('selectedTool');
-    thinButton.classList.add('selectedTool');  // Add selected styling
+    thinButton.classList.add('selectedTool');
 });
 
-// Event handler for switching to thick marker
 thickButton.addEventListener('click', () => {
-    currentThickness = 5;  // Set thick marker thickness
+    currentThickness = 5;
     thinButton.classList.remove('selectedTool');
-    thickButton.classList.add('selectedTool');  // Add selected styling
+    thickButton.classList.add('selectedTool');
 });
