@@ -236,17 +236,52 @@ thickButton.addEventListener("click", () => {
     thickButton.classList.add("selectedTool");
 });
 
-// Sticker Buttons
-const stickerEmojis = ["😀", "🌟", "🔥"];
-stickerEmojis.forEach(emoji => {
-    const button = document.createElement("button");
-    button.textContent = emoji;
-    button.classList.add("sticker-button");
-    button.addEventListener("click", () => {
-        currentSticker = new Sticker(emoji, canvas.width / 2, canvas.height / 2);
-        const event = new Event("tool-moved");
-        canvas.dispatchEvent(event);
-        redrawCanvas();
+// Initial stickers data array
+let stickersData = [
+    { emoji: "😀", label: "Smile" },
+    { emoji: "🌟", label: "Star" },
+    { emoji: "🔥", label: "Fire" }
+];
+
+
+
+
+
+// Add a custom sticker button
+const customStickerButton = document.createElement("button");
+customStickerButton.textContent = "Add Custom Sticker";
+app.appendChild(customStickerButton);
+
+function addStickerButtons() {
+    stickersData.forEach((sticker) => {
+        const button = document.createElement("button");
+        button.textContent = sticker.emoji;
+        button.classList.add("sticker-button");
+        button.addEventListener("click", () => {
+            currentSticker = new Sticker(sticker.emoji, canvas.width / 2, canvas.height / 2);
+            const event = new Event("tool-moved");
+            canvas.dispatchEvent(event);
+            redrawCanvas();
+        });
+        app.appendChild(button);
     });
-    app.appendChild(button);
+}
+addStickerButtons();
+
+function clearStickerButtons() {
+    const stickerButtons = document.querySelectorAll(".sticker-button");
+    stickerButtons.forEach((button) => button.remove());
+}
+
+
+customStickerButton.addEventListener("click", () => {
+    const userEmoji = prompt("Enter an emoji for your custom sticker:", "😊");
+    if (userEmoji) {
+        stickersData.push({ emoji: userEmoji, label: "Custom" });
+        clearStickerButtons(); // Clear existing sticker buttons
+        addStickerButtons(); // Re-render the sticker buttons
+        currentSticker = new Sticker(userEmoji, canvas.width / 2, canvas.height / 2);
+        redrawCanvas();
+    }
 });
+
