@@ -66,6 +66,11 @@ class Sticker {
         ctx.font = "24px Arial";
         ctx.fillText(this.emoji, this.x, this.y);
     }
+
+    draw(ctx: CanvasRenderingContext2D) {
+        ctx.font = '48px serif';  // Adjust font size as needed
+        ctx.fillText(this.emoji, this.x, this.y);
+    }
 }
 
 // Tool preview class for showing marker size
@@ -131,7 +136,7 @@ canvas.addEventListener("drawing-changed", () => {
 canvas.addEventListener("mousedown", (e) => {
     if (currentSticker) {
         currentSticker.setPosition(e.offsetX, e.offsetY);
-        stickers.push(currentSticker);
+        stickers.push(currentSticker); // Store sticker with its position
         linesAndStickers.push(currentSticker); // Add sticker to unified array
         currentSticker = null;
     } else {
@@ -197,6 +202,7 @@ undoButton.addEventListener("click", () => {
         drawingChangedEvent();
     }
 });
+
 const redoButton = document.createElement("button");
 redoButton.textContent = "redo";
 redoButton.id = "redoButton";
@@ -236,16 +242,18 @@ thickButton.addEventListener("click", () => {
     thickButton.classList.add("selectedTool");
 });
 
-// Initial stickers data array
-let stickersData = [
-    { emoji: "😀", label: "Smile" },
-    { emoji: "🌟", label: "Star" },
-    { emoji: "🔥", label: "Fire" }
+// Initial stickers data array with x and y positions
+const stickersData: Array<StickerData> = [
+    { emoji: "😀", x: 0, y: 0 },
+    { emoji: "🌟", x: 0, y: 0 },
+    { emoji: "🔥", x: 0, y: 0 }
 ];
 
-
-
-
+interface StickerData {
+    emoji: string;
+    x: number;
+    y: number;
+}
 
 // Add a custom sticker button
 const customStickerButton = document.createElement("button");
@@ -273,15 +281,41 @@ function clearStickerButtons() {
     stickerButtons.forEach((button) => button.remove());
 }
 
-
 customStickerButton.addEventListener("click", () => {
     const userEmoji = prompt("Enter an emoji for your custom sticker:", "😊");
     if (userEmoji) {
-        stickersData.push({ emoji: userEmoji, label: "Custom" });
-        clearStickerButtons(); // Clear existing sticker buttons
-        addStickerButtons(); // Re-render the sticker buttons
-        currentSticker = new Sticker(userEmoji, canvas.width / 2, canvas.height / 2);
-        redrawCanvas();
+        const customSticker: StickerData = { emoji: userEmoji, x: 0, y: 0 };
+        stickersData.push(customSticker);
+        clearStickerButtons(); // Clear existing buttons to avoid duplicates
+        addStickerButtons(); // Add updated buttons
     }
 });
 
+// Export the canvas as an image
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+app.appendChild(exportButton);
+
+exportButton.addEventListener("click", () => {
+    // Create a temporary canvas to capture the current drawings
+    const tempCanvas = document.createElement("canvas");
+    const scaleFactor = 4; // Factor to scale the image
+    tempCanvas.width = canvas.width * scaleFactor; // Set width 4x larger
+    tempCanvas.height = canvas.height * scaleFactor; // Set height 4x larger
+    const tempCtx = tempCanvas.getContext("2d");
+
+    if (tempCtx) {
+        // Scale the context to ensure everything is drawn at 4x size
+        tempCtx.scale(scaleFactor, scaleFactor);
+
+        // Draw all lines and stickers onto the temporary canvas
+        lines.forEach(line => line.display(tempCtx));
+        stickers.forEach(sticker => sticker.display(tempCtx));
+
+        // Export the temporary canvas as an image
+        const link = document.createElement("a");
+        link.href = tempCanvas.toDataURL();
+        link.download = "sketchbox_output.png";
+        link.click();
+    }
+});
