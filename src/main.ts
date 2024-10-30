@@ -54,11 +54,13 @@ class Sticker {
     private emoji: string;
     private x: number;
     private y: number;
+    private rotation: number; // New property to hold rotation
 
-    constructor(emoji: string, x: number, y: number) {
+    constructor(emoji: string, x: number, y: number, rotation: number = 0) {
         this.emoji = emoji;
         this.x = x;
         this.y = y;
+        this.rotation = rotation;
     }
 
     setPosition(x: number, y: number) {
@@ -66,14 +68,17 @@ class Sticker {
         this.y = y;
     }
 
-    display(ctx: CanvasRenderingContext2D) {
-        ctx.font = "24px Arial";
-        ctx.fillText(this.emoji, this.x, this.y);
+    setRotation(rotation: number) {
+        this.rotation = rotation;
     }
 
-    draw(ctx: CanvasRenderingContext2D) {
-        ctx.font = '48px serif';  // Adjust font size as needed
-        ctx.fillText(this.emoji, this.x, this.y);
+    display(ctx: CanvasRenderingContext2D) {
+        ctx.save(); // Save the current context state
+        ctx.translate(this.x, this.y); // Move the context to the sticker position
+        ctx.rotate(this.rotation); // Apply the rotation
+        ctx.font = "24px Arial";
+        ctx.fillText(this.emoji, 0, 0); // Draw the emoji at the new rotated position
+        ctx.restore(); // Restore the context to its original state
     }
 }
 
@@ -275,7 +280,8 @@ function addStickerButtons() {
         button.textContent = sticker.emoji;
         button.classList.add("sticker-button");
         button.addEventListener("click", () => {
-            currentSticker = new Sticker(sticker.emoji, canvas.width / 2, canvas.height / 2);
+            const randomRotation = Math.random() * 2 * Math.PI; // Random rotation in radians
+            currentSticker = new Sticker(sticker.emoji, canvas.width / 2, canvas.height / 2, randomRotation);
             const event = new Event("tool-moved");
             canvas.dispatchEvent(event);
             redrawCanvas();
