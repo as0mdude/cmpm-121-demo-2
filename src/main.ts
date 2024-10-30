@@ -22,10 +22,12 @@ let currentSticker: Sticker | null = null; // Track the current sticker preview
 class Line {
     private points: Array<{ x: number, y: number }> = [];
     private thickness: number;
+    private color: string; // Store color specific to this line
 
-    constructor(startX: number, startY: number, thickness: number) {
+    constructor(startX: number, startY: number, thickness: number, color: string) {
         this.points.push({ x: startX, y: startY });
         this.thickness = thickness;
+        this.color = color; // Set the color when the line is created
     }
 
     drag(x: number, y: number) {
@@ -37,6 +39,7 @@ class Line {
             ctx.beginPath();
             ctx.moveTo(this.points[0].x, this.points[0].y);
             ctx.lineWidth = this.thickness;
+            ctx.strokeStyle = this.color; // Use the color specific to this line
             for (let i = 1; i < this.points.length; i++) {
                 ctx.lineTo(this.points[i].x, this.points[i].y);
             }
@@ -45,6 +48,7 @@ class Line {
         }
     }
 }
+
 
 class Sticker {
     private emoji: string;
@@ -133,17 +137,22 @@ canvas.addEventListener("drawing-changed", () => {
 });
 
 // Event handler for starting drawing
+// Update event handler to assign color to each new line
 canvas.addEventListener("mousedown", (e) => {
     if (currentSticker) {
         currentSticker.setPosition(e.offsetX, e.offsetY);
-        stickers.push(currentSticker); // Store sticker with its position
-        linesAndStickers.push(currentSticker); // Add sticker to unified array
+        stickers.push(currentSticker);
+        linesAndStickers.push(currentSticker);
         currentSticker = null;
     } else {
         isDrawing = true;
-        const newLine = new Line(e.offsetX, e.offsetY, currentThickness);
+        
+        // Set color based on the current thickness or other criteria
+        const lineColor = currentThickness === 2 ? "blue" : "red";
+        const newLine = new Line(e.offsetX, e.offsetY, currentThickness, lineColor);
+        
         lines.push(newLine);
-        linesAndStickers.push(newLine); // Add line to unified array
+        linesAndStickers.push(newLine);
         toolPreview = null;
     }
     drawingChangedEvent();
@@ -219,13 +228,13 @@ redoButton.addEventListener("click", () => {
 
 // Thin and Thick Marker Tool Selection
 const thinButton = document.createElement("button");
-thinButton.textContent = "thin";
+thinButton.textContent = "thin, blue";
 thinButton.id = "thinButton";
 thinButton.classList.add("tool-button", "selectedTool");
 app.appendChild(thinButton);
 
 const thickButton = document.createElement("button");
-thickButton.textContent = "thick";
+thickButton.textContent = "thick, red";
 thickButton.id = "thickButton";
 thickButton.classList.add("tool-button");
 app.appendChild(thickButton);
