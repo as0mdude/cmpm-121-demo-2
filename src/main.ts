@@ -100,7 +100,9 @@ class ToolPreview {
     draw(ctx: CanvasRenderingContext2D) {
         ctx.beginPath();
         ctx.arc(this.x, this.y, currentThickness / 2, 0, Math.PI * 2);
-        ctx.fillStyle = "white";
+        canvas.style.cursor = 'none'; //Disable cursor inside the canvas
+        const color = currentThickness === 2 ? "blue" : "red"; //Change color of preview based on tool selected
+        ctx.fillStyle = color;
         ctx.fill();
         ctx.closePath();
     }
