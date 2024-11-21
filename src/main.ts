@@ -293,11 +293,13 @@ function addStickerButtons() {
 }
 addStickerButtons();
 
+// Clears the sticker Buttons
 function clearStickerButtons() {
     const stickerButtons = document.querySelectorAll(".sticker-button");
     stickerButtons.forEach((button) => button.remove());
 }
 
+// Listen for Custom Sticker 
 customStickerButton.addEventListener("click", () => {
     const userEmoji = prompt("Enter an emoji for your custom sticker:", "😊");
     if (userEmoji) {
